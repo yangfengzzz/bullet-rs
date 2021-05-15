@@ -227,6 +227,48 @@ impl Sub for BtVector3 {
     }
 }
 
+// Return the difference between two vectors
+impl Sub<&BtVector3> for BtVector3 {
+    type Output = BtVector3;
+
+    #[allow(overflowing_literals)]
+    fn sub(self, rhs: &Self) -> Self::Output {
+        unsafe {
+            let r = _mm_sub_ps(self.m_vec128.simd, rhs.m_vec128.simd);
+            let b = btv_fff0f_mask!();
+            return BtVector3::new_simd(_mm_and_ps(r, b));
+        }
+    }
+}
+
+// Return the difference between two vectors
+impl Sub<BtVector3> for &BtVector3 {
+    type Output = BtVector3;
+
+    #[allow(overflowing_literals)]
+    fn sub(self, rhs: BtVector3) -> Self::Output {
+        unsafe {
+            let r = _mm_sub_ps(self.m_vec128.simd, rhs.m_vec128.simd);
+            let b = btv_fff0f_mask!();
+            return BtVector3::new_simd(_mm_and_ps(r, b));
+        }
+    }
+}
+
+// Return the difference between two vectors
+impl Sub<&BtVector3> for &BtVector3 {
+    type Output = BtVector3;
+
+    #[allow(overflowing_literals)]
+    fn sub(self, rhs: &BtVector3) -> Self::Output {
+        unsafe {
+            let r = _mm_sub_ps(self.m_vec128.simd, rhs.m_vec128.simd);
+            let b = btv_fff0f_mask!();
+            return BtVector3::new_simd(_mm_and_ps(r, b));
+        }
+    }
+}
+
 /// Return the negative of the vector
 impl Neg for BtVector3 {
     type Output = BtVector3;
@@ -316,15 +358,19 @@ impl BtVector3 {
         return 0.0;
     }
 
-    // /// Return the distance squared between the ends of this and another vector
-    // /// This is symantically treating the vector like a point
-    // #[inline(always)]
-    // fn distance2(&self, v: BtVector3) -> BtScalar {}
-    //
-    // /// Return the distance between the ends of this and another vector
-    // /// This is symantically treating the vector like a point
-    // #[inline(always)]
-    // fn distance(&self, v: BtVector3) -> BtScalar {}
+    /// Return the distance squared between the ends of this and another vector
+    /// This is symantically treating the vector like a point
+    #[inline(always)]
+    fn distance2(&self, v: BtVector3) -> BtScalar {
+        return (v - self).length2()
+    }
+
+    /// Return the distance between the ends of this and another vector
+    /// This is symantically treating the vector like a point
+    #[inline(always)]
+    fn distance(&self, v: BtVector3) -> BtScalar {
+        return (v - self).length()
+    }
 
     #[inline(always)]
     pub fn safe_normalize(&mut self) {
