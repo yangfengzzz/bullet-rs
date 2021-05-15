@@ -13,9 +13,7 @@ macro_rules! bt_shuffle {
 #[macro_export]
 macro_rules! bt_pshufd_ps {
     ($_a:expr,$_mask:expr)=>{
-        unsafe {
-            _mm_shuffle_ps($_a, $_a, $_mask)
-        }
+        _mm_shuffle_ps($_a, $_a, $_mask)
     }
 }
 
@@ -36,27 +34,21 @@ macro_rules! bt_splat_ps {
 #[macro_export]
 macro_rules! btv_3absi_mask {
     ()=>{
-        unsafe {
-            _mm_set_epi32(0x00000000, 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF)
-        }
+        _mm_set_epi32(0x00000000, 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF)
     }
 }
 
 #[macro_export]
 macro_rules! btv_abs_mask {
     ()=>{
-       unsafe {
-           _mm_set_epi32(0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF)
-        }
+        _mm_set_epi32(0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF)
     }
 }
 
 #[macro_export]
 macro_rules! btv_fff0_mask {
     ()=>{
-        unsafe {
-            _mm_set_epi32(0x00000000, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF)
-        }
+        _mm_set_epi32(0x00000000, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF)
     }
 }
 
@@ -77,36 +69,28 @@ macro_rules! btv_fff0f_mask {
 #[macro_export]
 macro_rules! btv_mzero_mask {
     () => {
-        unsafe {
-            _mm_set_ps(-0.0, -0.0, -0.0, -0.0)
-        }
+        _mm_set_ps(-0.0, -0.0, -0.0, -0.0)
     };
 }
 
 #[macro_export]
 macro_rules! v_1110 {
     () => {
-        unsafe {
-            _mm_set_ps(0.0, 1.0, 1.0, 1.0)
-        }
+        _mm_set_ps(0.0, 1.0, 1.0, 1.0)
     };
 }
 
 #[macro_export]
 macro_rules! v_half {
     () => {
-        unsafe {
-            _mm_set_ps(0.5, 0.5, 0.5, 0.5)
-        }
+        _mm_set_ps(0.5, 0.5, 0.5, 0.5)
     };
 }
 
 #[macro_export]
 macro_rules! v_1_5 {
     () => {
-        unsafe {
-            _mm_set_ps(1.5, 1.5, 1.5, 1.5)
-        }
+        _mm_set_ps(1.5, 1.5, 1.5, 1.5)
     };
 }
 
@@ -191,27 +175,45 @@ impl DivAssign<BtScalar> for BtVector3 {
     }
 }
 
-/// Return the sum of two vectors (Point symantics)
-impl Add for BtVector3 {
-    type Output = BtVector3;
+macro_rules! impl_bin_add_vector {
+    ($lhs:ty, $rhs:ty) => {
+        /// Return the sum of two vectors (Point symantics)
+        impl Add<$rhs> for $lhs {
+            type Output = BtVector3;
 
-    fn add(self, rhs: Self) -> Self::Output {
-        unsafe {
-            return BtVector3::new_simd(_mm_add_ps(self.m_vec128.simd, rhs.m_vec128.simd));
+            fn add(self, rhs: $rhs) -> Self::Output {
+                unsafe {
+                    return BtVector3::new_simd(_mm_add_ps(self.m_vec128.simd, rhs.m_vec128.simd));
+                }
+            }
         }
     }
 }
 
-/// Return the elementwise product of two vectors
-impl Mul for BtVector3 {
-    type Output = BtVector3;
+impl_bin_add_vector!(BtVector3, BtVector3);
+impl_bin_add_vector!(&BtVector3, BtVector3);
+impl_bin_add_vector!(BtVector3, &BtVector3);
+impl_bin_add_vector!(&BtVector3, &BtVector3);
 
-    fn mul(self, rhs: Self) -> Self::Output {
-        unsafe {
-            return BtVector3::new_simd(_mm_mul_ps(self.m_vec128.simd, rhs.m_vec128.simd));
+macro_rules! impl_bin_mul_vector {
+    ($lhs:ty, $rhs:ty) => {
+        /// Return the sum of two vectors (Point symantics)
+        impl Mul<$rhs> for $lhs {
+            type Output = BtVector3;
+
+            fn mul(self, rhs: $rhs) -> Self::Output {
+                unsafe {
+                    return BtVector3::new_simd(_mm_mul_ps(self.m_vec128.simd, rhs.m_vec128.simd));
+                }
+            }
         }
     }
 }
+
+impl_bin_mul_vector!(BtVector3, BtVector3);
+impl_bin_mul_vector!(&BtVector3, BtVector3);
+impl_bin_mul_vector!(BtVector3, &BtVector3);
+impl_bin_mul_vector!(&BtVector3, &BtVector3);
 
 macro_rules! impl_bin_sub_vector {
     ($lhs:ty, $rhs:ty) => {
@@ -265,9 +267,7 @@ impl Div<BtScalar> for BtVector3 {
     type Output = BtVector3;
 
     fn div(self, rhs: f32) -> Self::Output {
-        unsafe {
-            return self * 1.0 / rhs;
-        }
+        return self * 1.0 / rhs;
     }
 }
 
@@ -305,9 +305,7 @@ impl BtVector3 {
     /// Return the length of the vector
     #[inline(always)]
     pub fn length(&self) -> BtScalar {
-        unsafe {
-            return self.length2().sqrt();
-        }
+        return self.length2().sqrt();
     }
 
     /// Return the norm (length) of the vector
@@ -425,7 +423,7 @@ impl BtVector3 {
 
     #[inline(always)]
     pub fn set_value(&mut self, _x: BtScalar, _y: BtScalar, _z: BtScalar) {
-        unsafe { self.m_vec128.array = [_x, _y, _z, 0.0] }
+        self.m_vec128.array = [_x, _y, _z, 0.0]
     }
 }
 
