@@ -110,25 +110,25 @@ macro_rules! v_1_5 {
 }
 
 //--------------------------------------------------------------------------------------------------
-struct BtVector3 {
+pub struct BtVector3 {
     m_vec128: BtSimdFloat4,
 }
 
 impl BtVector3 {
     #[inline(always)]
-    fn get128(&self) -> BtSimdFloat4 { return self.m_vec128; }
+    pub fn get128(&self) -> BtSimdFloat4 { return self.m_vec128; }
 
     #[inline(always)]
-    fn set128(&mut self, v128: BtSimdFloat4) { self.m_vec128 = v128; }
+    pub fn set128(&mut self, v128: BtSimdFloat4) { self.m_vec128 = v128; }
 
-    fn new_default() -> BtVector3 {
+    pub fn new_default() -> BtVector3 {
         return BtVector3 {
             m_vec128: unsafe { _mm_set_ps(0.0, 0.0, 0.0, 0.0) }
         };
     }
 
     /// Constructor from scalars
-    fn new(_x: BtScalar, _y: BtScalar, _z: BtScalar) -> BtVector3 {
+    pub fn new(_x: BtScalar, _y: BtScalar, _z: BtScalar) -> BtVector3 {
         return BtVector3 {
             m_vec128: unsafe { _mm_set_ps(_x, _y, _z, 0.0) }
         };
@@ -180,7 +180,7 @@ impl DivAssign<BtScalar> for BtVector3 {
 
 impl BtVector3 {
     #[inline(always)]
-    fn dot(&self, v: &BtVector3) -> BtScalar {
+    pub fn dot(&self, v: &BtVector3) -> BtScalar {
         unsafe {
             let mut vd = _mm_mul_ps(self.m_vec128, v.m_vec128);
             let z = _mm_movehl_ps(vd, vd);
@@ -193,11 +193,11 @@ impl BtVector3 {
 
     /// Return the length of the vector squared
     #[inline(always)]
-    fn length2(&self) -> BtScalar { return self.dot(self); }
+    pub fn length2(&self) -> BtScalar { return self.dot(self); }
 
     /// Return the length of the vector
     #[inline(always)]
-    fn length(&self) -> BtScalar {
+    pub fn length(&self) -> BtScalar {
         unsafe {
             return self.length2().sqrt();
         }
@@ -205,11 +205,11 @@ impl BtVector3 {
 
     /// Return the norm (length) of the vector
     #[inline(always)]
-    fn norm(&self) -> BtScalar { return self.length(); }
+    pub fn norm(&self) -> BtScalar { return self.length(); }
 
     /// Return the norm (length) of the vector
     #[inline(always)]
-    fn safe_norm(&self) -> BtScalar {
+    pub fn safe_norm(&self) -> BtScalar {
         let d = self.length2();
         // workaround for some clang/gcc issue of sqrtf(tiny number) = -INF
         if d > SIMD_EPSILON {
@@ -229,7 +229,7 @@ impl BtVector3 {
     // fn distance(&self, v: BtVector3) -> BtScalar {}
 
     #[inline(always)]
-    fn safe_normalize(&mut self) -> &mut BtVector3 {
+    pub fn safe_normalize(&mut self) -> &mut BtVector3 {
         let l2 = self.length2();
 
         if l2 >= SIMD_EPSILON * SIMD_EPSILON {
@@ -241,7 +241,7 @@ impl BtVector3 {
     }
 
     #[inline(always)]
-    fn set_value(&mut self, _x: BtScalar, _y: BtScalar, _z: BtScalar) {
+    pub fn set_value(&mut self, _x: BtScalar, _y: BtScalar, _z: BtScalar) {
         unsafe { self.m_vec128 = _mm_set_ps(_x, _y, _z, 0.0) }
     }
 }
@@ -251,6 +251,8 @@ pub fn test() {
     let mut a = BtVector3::new_default();
     let b: BtScalar = 10.0;
     a /= b;
+
+    a.set_value(10.0, 20.0, 4.0);
 }
 
 
