@@ -1,3 +1,5 @@
+use bullet::bt_vector3::test;
+
 fn main() {
-    println!("Hello, world!");
+    test();
 }
