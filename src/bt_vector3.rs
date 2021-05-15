@@ -246,7 +246,7 @@ impl BtVector3 {
     }
 }
 
-
+#[test]
 pub fn test() {
     let mut a = BtVector3::new_default();
     let b: BtScalar = 10.0;
