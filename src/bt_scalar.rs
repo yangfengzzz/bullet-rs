@@ -10,8 +10,8 @@ pub type BtSimdFloat4 = __m128;
 #[macro_export]
 macro_rules! bt_castf_to128i {
     ($a:expr)=>{
-        {
-            $a as __m128i
+        unsafe {
+            _mm_castps_si128($a)
         }
     }
 }
@@ -19,8 +19,8 @@ macro_rules! bt_castf_to128i {
 #[macro_export]
 macro_rules! bt_castf_to128d {
     ($a:expr)=>{
-        {
-            return $a as __m128d
+        unsafe {
+            _mm_castps_pd($a)
         }
     }
 }
@@ -28,8 +28,8 @@ macro_rules! bt_castf_to128d {
 #[macro_export]
 macro_rules! bt_casti_to128f {
     ($a:expr)=>{
-        {
-            return $a as __m128
+        unsafe {
+            _mm_castsi128_ps($a)
         }
     }
 }
@@ -37,8 +37,8 @@ macro_rules! bt_casti_to128f {
 #[macro_export]
 macro_rules! bt_castd_to128f {
     ($a:expr)=>{
-        {
-            return $a as __m128
+        unsafe {
+            _mm_castpd_ps($a)
         }
     }
 }
@@ -46,8 +46,8 @@ macro_rules! bt_castd_to128f {
 #[macro_export]
 macro_rules! bt_castd_to128i {
     ($a:expr)=>{
-        {
-            return $a as __m128i
+        unsafe {
+            _mm_castpd_si128($a)
         }
     }
 }
@@ -56,7 +56,7 @@ macro_rules! bt_castd_to128i {
 macro_rules! bt_assign128 {
     ($r0:expr, $r1:expr, $r2:expr, $r3:expr)=>{
         {
-            __m128($r0, $r1, $r2, $r3);
+            __m128($r0, $r1, $r2, $r3)
         }
     }
 }

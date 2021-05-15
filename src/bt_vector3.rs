@@ -1,6 +1,7 @@
 use crate::bt_scalar::{*};
+use crate::bt_casti_to128f;
 use std::arch::x86_64::{*};
-use std::ops::{AddAssign, SubAssign, MulAssign, DivAssign, Add};
+use std::ops::{AddAssign, SubAssign, MulAssign, DivAssign, Add, Mul, Sub, Neg, Div};
 
 #[macro_export]
 macro_rules! bt_shuffle {
@@ -28,7 +29,7 @@ macro_rules! bt_splat3_ps {
 #[macro_export]
 macro_rules! bt_splat_ps {
     ($_a:expr,$_i:expr)=>{
-            bt_pshufd_ps!($_a, bt_shuffle!($_i, $_i, $_i, $_i))
+        bt_pshufd_ps!($_a, bt_shuffle!($_i, $_i, $_i, $_i))
     }
 }
 
@@ -45,7 +46,7 @@ macro_rules! btv_3absi_mask {
 macro_rules! btv_abs_mask {
     ()=>{
        unsafe {
-            _mm_set_epi32(0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF)
+           _mm_set_epi32(0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF)
         }
     }
 }
@@ -138,6 +139,13 @@ impl BtVector3 {
             m_vec128: SimdToArray { array: [_x, _y, _z, 0.0] }
         };
     }
+
+    /// Set Vector
+    pub fn new_simd(v: BtSimdFloat4) -> BtVector3 {
+        return BtVector3 {
+            m_vec128: SimdToArray { simd: v }
+        };
+    }
 }
 
 impl AddAssign for BtVector3 {
@@ -183,6 +191,91 @@ impl DivAssign<BtScalar> for BtVector3 {
     }
 }
 
+/// Return the sum of two vectors (Point symantics)
+impl Add for BtVector3 {
+    type Output = BtVector3;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        unsafe {
+            return BtVector3::new_simd(_mm_add_ps(self.m_vec128.simd, rhs.m_vec128.simd));
+        }
+    }
+}
+
+/// Return the elementwise product of two vectors
+impl Mul for BtVector3 {
+    type Output = BtVector3;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        unsafe {
+            return BtVector3::new_simd(_mm_mul_ps(self.m_vec128.simd, rhs.m_vec128.simd));
+        }
+    }
+}
+
+// Return the difference between two vectors
+impl Sub for BtVector3 {
+    type Output = BtVector3;
+
+    #[allow(overflowing_literals)]
+    fn sub(self, rhs: Self) -> Self::Output {
+        unsafe {
+            let r = _mm_sub_ps(self.m_vec128.simd, rhs.m_vec128.simd);
+            let b = btv_fff0f_mask!();
+            return BtVector3::new_simd(_mm_and_ps(r, b));
+        }
+    }
+}
+
+/// Return the negative of the vector
+impl Neg for BtVector3 {
+    type Output = BtVector3;
+
+    #[allow(overflowing_literals)]
+    fn neg(self) -> Self::Output {
+        unsafe {
+            let r = _mm_xor_ps(self.m_vec128.simd, btv_mzero_mask!());
+            return BtVector3::new_simd(_mm_and_ps(r, btv_fff0f_mask!()));
+        }
+    }
+}
+
+impl Mul<BtScalar> for BtVector3 {
+    type Output = BtVector3;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        unsafe {
+            let mut vs = _mm_load_ss(&rhs); //    (S 0 0 0)
+            vs = bt_pshufd_ps!(vs, 0x80); //    (S S S 0.0)
+            return BtVector3::new_simd(_mm_mul_ps(self.m_vec128.simd, vs));
+        }
+    }
+}
+
+impl Div<BtScalar> for BtVector3 {
+    type Output = BtVector3;
+
+    fn div(self, rhs: f32) -> Self::Output {
+        unsafe {
+            return self * 1.0 / rhs;
+        }
+    }
+}
+
+impl Div for BtVector3 {
+    type Output = BtVector3;
+
+    #[allow(overflowing_literals)]
+    fn div(self, rhs: Self) -> Self::Output {
+        unsafe {
+            let mut vec = _mm_div_ps(self.m_vec128.simd, rhs.m_vec128.simd);
+            vec = _mm_and_ps(vec, btv_fff0f_mask!());
+            return BtVector3::new_simd(vec);
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
 impl BtVector3 {
     #[inline(always)]
     pub fn dot(&self, v: &BtVector3) -> BtScalar {
