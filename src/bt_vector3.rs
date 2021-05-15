@@ -1,6 +1,7 @@
 use crate::bt_scalar::BtScalar;
-use std::arch::x86_64::{_mm_shuffle_ps, _mm_set_epi32};
 
+use std::arch::x86_64::{_mm_shuffle_ps, _mm_set_epi32};
+#[macro_export]
 macro_rules! bt_shuffle {
     ($x:expr,$y:expr, $z:expr, $w:expr)=>{
         {
@@ -9,6 +10,7 @@ macro_rules! bt_shuffle {
     }
 }
 
+#[macro_export]
 macro_rules! bt_pshufd_ps {
     ($_a:expr,$_mask:expr)=>{
         {
@@ -17,6 +19,7 @@ macro_rules! bt_pshufd_ps {
     }
 }
 
+#[macro_export]
 macro_rules! bt_splat3_ps {
     ($_a:expr,$_i:expr)=>{
         {
@@ -25,6 +28,7 @@ macro_rules! bt_splat3_ps {
     }
 }
 
+#[macro_export]
 macro_rules! bt_splat_ps {
     ($_a:expr,$_i:expr)=>{
         {
@@ -33,6 +37,7 @@ macro_rules! bt_splat_ps {
     }
 }
 
+#[macro_export]
 macro_rules! btv_3absi_mask {
     ()=>{
         {
@@ -41,6 +46,7 @@ macro_rules! btv_3absi_mask {
     }
 }
 
+#[macro_export]
 macro_rules! btv_abs_mask {
     ()=>{
         {
@@ -49,6 +55,7 @@ macro_rules! btv_abs_mask {
     }
 }
 
+#[macro_export]
 macro_rules! btv_fff0_mask {
     ()=>{
         {
@@ -57,10 +64,11 @@ macro_rules! btv_fff0_mask {
     }
 }
 
+#[macro_export]
 pub fn test() {
     unsafe {
         let a = btv_3absi_mask!();
     }
 
-    let b:crate::bt_scalar::BtScalar = 0.0;
+    let b:BtScalar = 0.0;
 }
