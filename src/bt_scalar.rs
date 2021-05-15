@@ -1,6 +1,8 @@
 use std::arch::x86_64::__m128;
+use std::f32::MAX;
 
 pub type BtScalar = f32;
+
 const BT_LARGE_FLOAT: f32 = 1e18;
 
 pub type BtSimdFloat4 = __m128;
@@ -58,3 +60,10 @@ macro_rules! bt_assign128 {
         }
     }
 }
+
+pub const SIMD_EPSILON: f32 = f32::EPSILON;
+pub const SIMD_INFINITY: f32 = f32::MAX;
+pub const BT_ONE: f32 = 1.0;
+pub const BT_ZERO: f32 = 0.0;
+pub const BT_TWO: f32 = 2.0;
+pub const BT_HALF: f32 = 0.5;
