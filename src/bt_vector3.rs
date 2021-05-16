@@ -423,23 +423,25 @@ impl BtVector3 {
         }
     }
 
-    // /// Return the angle between this and another vector
-    // /// - Parameter: v The other vector
-    // fn angle(v: BtVector3) -> BtScalar {
-    //     let s = btSqrt(length2() * v.length2());
-    //     assert!(s != 0.0);
-    //     return btAcos(dot(v) / s);
-    // }
-    //
-    // /// Return a vector with the absolute values of each element
-    // fn absolute() -> BtVector3 {
-    //     unsafe {
-    //         return btVector3(_mm_and_ps(mVec128, btv3AbsfMask));
-    //     }
-    // }
+    /// Return the angle between this and another vector
+    /// - Parameter: v The other vector
+    #[inline(always)]
+    fn angle(&self, v: &BtVector3) -> BtScalar {
+        let s = (self.length2() * v.length2()).sqrt();
+        return (self.dot(v) / s).cos();
+    }
+
+    /// Return a vector with the absolute values of each element
+    #[inline(always)]
+    fn absolute(&self) -> BtVector3 {
+        unsafe {
+            return BtVector3::new_simd(_mm_and_ps(self.m_vec128.simd, btv3_absf_mask!()));
+        }
+    }
 
     /// Return the cross product between this and another vector
     /// - Parameter: v The other vector */
+    #[inline(always)]
     fn cross(&self, v: &BtVector3) -> BtVector3 {
         unsafe {
             let mut t = bt_pshufd_ps!(self.m_vec128.simd, bt_shuffle!(1, 2, 0, 3));   //    (Y Z X 0)
@@ -454,9 +456,78 @@ impl BtVector3 {
         }
     }
 
-    // fn triple(v1:BtVector3, v2:BtVector3) ->BtScalar {
-    //
-    // }
+    #[inline(always)]
+    fn triple(&self, v1: BtVector3, v2: BtVector3) -> BtScalar {
+        unsafe {
+            // cross:
+            let mut t = _mm_shuffle_ps(v1.m_vec128.simd, v1.m_vec128.simd, bt_shuffle!(1, 2, 0, 3)); //    (Y Z X 0)
+            let mut v = _mm_shuffle_ps(v2.m_vec128.simd, v2.m_vec128.simd, bt_shuffle!(1, 2, 0, 3)); //    (Y Z X 0)
+
+            v = _mm_mul_ps(v, v1.m_vec128.simd);
+            t = _mm_mul_ps(t, v2.m_vec128.simd);
+            v = _mm_sub_ps(v, t);
+
+            v = _mm_shuffle_ps(v, v, bt_shuffle!(1, 2, 0, 3));
+
+            // dot:
+            v = _mm_mul_ps(v, self.m_vec128.simd);
+            let z = _mm_movehl_ps(v, v);
+            let y = _mm_shuffle_ps(v, v, 0x55);
+            v = _mm_add_ss(v, y);
+            v = _mm_add_ss(v, z);
+            return _mm_cvtss_f32(v);
+        }
+    }
+
+    /// Return the axis with the smallest value
+    /// Note return values are 0,1,2 for x, y, or z
+    #[inline(always)]
+    fn min_axis(&self) -> i32 {
+        unsafe {
+            return match self.m_vec128.array[0] < self.m_vec128.array[1] {
+                true => {
+                    match self.m_vec128.array[0] < self.m_vec128.array[2] {
+                        true => { 0 }
+                        false => { 2 }
+                    }
+                }
+                false => {
+                    match self.m_vec128.array[1] < self.m_vec128.array[2] {
+                        true => { 1 }
+                        false => { 2 }
+                    }
+                }
+            };
+        }
+    }
+
+    /// Return the axis with the largest value
+    /// Note return values are 0,1,2 for x, y, or z
+    #[inline(always)]
+    fn max_axis(&self) -> i32 {
+        unsafe {
+            return match self.m_vec128.array[0] < self.m_vec128.array[1] {
+                true => {
+                    match self.m_vec128.array[1] < self.m_vec128.array[2] {
+                        true => { 2 }
+                        false => { 1 }
+                    }
+                }
+                false => {
+                    match self.m_vec128.array[0] < self.m_vec128.array[2] {
+                        true => { 2 }
+                        false => { 0 }
+                    }
+                }
+            };
+        }
+    }
+
+    #[inline(always)]
+    fn furthest_axis(&self) -> i32 { return self.absolute().min_axis(); }
+
+    #[inline(always)]
+    fn closest_axis(&self) -> i32 { return self.absolute().max_axis(); }
 
     #[inline(always)]
     pub fn set_value(&mut self, _x: BtScalar, _y: BtScalar, _z: BtScalar) {
