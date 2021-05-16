@@ -1,7 +1,7 @@
 use crate::bt_scalar::{*};
 use crate::bt_casti_to128f;
 use std::arch::x86_64::{*};
-use std::ops::{AddAssign, SubAssign, MulAssign, DivAssign, Add, Mul, Sub, Neg, Div, Deref};
+use std::ops::{AddAssign, SubAssign, MulAssign, DivAssign, Add, Mul, Sub, Neg, Div};
 
 #[macro_export]
 macro_rules! bt_shuffle {
@@ -383,17 +383,46 @@ impl BtVector3 {
     // Return a normalized version of this vector
     #[inline(always)]
     fn normalized(&self) -> &BtVector3 {
-        let mut nrm = self.clone();
+        let nrm = self.clone();
 
         return nrm.normalized();
     }
 
-    // /// Return a rotated version of this vector
-    // /// - Parameter: wAxis The axis to rotate about
-    // /// - Parameter: angle The angle to rotate by
-    // #[inline(always)]
-    // fn rotate(wAxis: BtVector3, angle: BtScalar) -> BtVector3 {}
-    //
+    /// Return a rotated version of this vector
+    /// - Parameter: w_axis The axis to rotate about
+    /// - Parameter: angle The angle to rotate by
+    #[inline(always)]
+    #[allow(overflowing_literals)]
+    fn rotate(&self, w_axis: BtVector3, _angle: BtScalar) -> BtVector3 {
+        unsafe {
+            let mut o = _mm_mul_ps(w_axis.m_vec128.simd, self.m_vec128.simd);
+            let ssin = _angle.sin();
+            let c = w_axis.cross(self).m_vec128.simd;
+            o = _mm_and_ps(o, btv_fff0f_mask!());
+            let scos = _angle.cos();
+
+            let mut vsin = _mm_load_ss(&ssin); //    (S 0 0 0)
+            let mut vcos = _mm_load_ss(&scos); //    (S 0 0 0)
+
+            let y = bt_pshufd_ps!(o, 0xC9); //    (y z x 0)
+            let z = bt_pshufd_ps!(o, 0xD2); //    (z x y 0)
+            o = _mm_add_ps(o, y);
+            vsin = bt_pshufd_ps!(vsin, 0x80); //    (S S S 0)
+            o = _mm_add_ps(o, z);
+            vcos = bt_pshufd_ps!(vcos, 0x80); //    (S S S 0)
+
+            vsin = _mm_mul_ps(vsin, c);
+            o = _mm_mul_ps(o, w_axis.m_vec128.simd);
+            let x = _mm_sub_ps(self.m_vec128.simd, o);
+
+            o = _mm_add_ps(o, vsin);
+            vcos = _mm_mul_ps(vcos, x);
+            o = _mm_add_ps(o, vcos);
+
+            return BtVector3::new_simd(o);
+        }
+    }
+
     // /// Return the angle between this and another vector
     // /// - Parameter: v The other vector
     // fn angle(v: BtVector3) -> BtScalar {
@@ -408,21 +437,23 @@ impl BtVector3 {
     //         return btVector3(_mm_and_ps(mVec128, btv3AbsfMask));
     //     }
     // }
-    //
-    // /// Return the cross product between this and another vector
-    // /// - Parameter: v The other vector */
-    // fn cross(v:BtVector3) ->BtVector3 {
-    //     let mut T = bt_pshufd_ps(mVec128, BT_SHUFFLE(1, 2, 0, 3));   //    (Y Z X 0)
-    //     let mut V = bt_pshufd_ps(v.mVec128, BT_SHUFFLE(1, 2, 0, 3)); //    (Y Z X 0)
-    //
-    //     V = _mm_mul_ps(V, mVec128);
-    //     T = _mm_mul_ps(T, v.mVec128);
-    //     V = _mm_sub_ps(V, T);
-    //
-    //     V = bt_pshufd_ps!(V, BT_SHUFFLE!(1, 2, 0, 3));
-    //     return btVector3(V);
-    // }
-    //
+
+    /// Return the cross product between this and another vector
+    /// - Parameter: v The other vector */
+    fn cross(&self, v: &BtVector3) -> BtVector3 {
+        unsafe {
+            let mut t = bt_pshufd_ps!(self.m_vec128.simd, bt_shuffle!(1, 2, 0, 3));   //    (Y Z X 0)
+            let mut vv = bt_pshufd_ps!(v.m_vec128.simd, bt_shuffle!(1, 2, 0, 3)); //    (Y Z X 0)
+
+            vv = _mm_mul_ps(vv, self.m_vec128.simd);
+            t = _mm_mul_ps(t, v.m_vec128.simd);
+            vv = _mm_sub_ps(vv, t);
+
+            vv = bt_pshufd_ps!(vv,  bt_shuffle!(1, 2, 0, 3));
+            return BtVector3::new_simd(vv);
+        }
+    }
+
     // fn triple(v1:BtVector3, v2:BtVector3) ->BtScalar {
     //
     // }
