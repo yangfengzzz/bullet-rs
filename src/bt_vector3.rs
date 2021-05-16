@@ -753,7 +753,7 @@ impl BtVector3 {
         return pt_index;
     }
 
-    //// create a vector as  btVector3( this->dot( btVector3 v0 ), this->dot( btVector3 v1), this->dot( btVector3 v2 ))
+    /// create a vector as  btVector3( this->dot( btVector3 v0 ), this->dot( btVector3 v1), this->dot( btVector3 v2 ))
     /// # Examples
     ///
     /// ```
@@ -791,19 +791,19 @@ impl BtVector3 {
 #[inline(always)]
 pub fn bt_dot(v1: &BtVector3, v2: &BtVector3) -> BtScalar { return v1.dot(v2); }
 
-/**@brief Return the distance squared between two vectors */
+/// Return the distance squared between two vectors */
 #[inline(always)]
 pub fn bt_distance2(v1: &BtVector3, v2: &BtVector3) -> BtScalar { return v1.distance2(v2); }
 
-/**@brief Return the distance between two vectors */
+/// Return the distance between two vectors */
 #[inline(always)]
 pub fn bt_distance(v1: &BtVector3, v2: &BtVector3) -> BtScalar { return v1.distance(v2); }
 
-/**@brief Return the angle between two vectors */
+/// Return the angle between two vectors */
 #[inline(always)]
 pub fn bt_angle(v1: &BtVector3, v2: &BtVector3) -> BtScalar { return v1.angle(v2); }
 
-/**@brief Return the cross product of two vectors */
+/// Return the cross product of two vectors */
 #[inline(always)]
 pub fn bt_cross(v1: &BtVector3, v2: &BtVector3) -> BtVector3 { return v1.cross(v2); }
 
