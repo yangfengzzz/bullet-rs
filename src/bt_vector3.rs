@@ -362,14 +362,14 @@ impl BtVector3 {
     /// Return the distance squared between the ends of this and another vector
     /// This is symantically treating the vector like a point
     #[inline(always)]
-    pub fn distance2(&self, v: BtVector3) -> BtScalar {
+    pub fn distance2(&self, v: &BtVector3) -> BtScalar {
         return (v - self).length2();
     }
 
     /// Return the distance between the ends of this and another vector
     /// This is symantically treating the vector like a point
     #[inline(always)]
-    pub fn distance(&self, v: BtVector3) -> BtScalar {
+    pub fn distance(&self, v: &BtVector3) -> BtScalar {
         return (v - self).length();
     }
 
@@ -493,7 +493,7 @@ impl BtVector3 {
     }
 
     #[inline(always)]
-    pub fn triple(&self, v1: BtVector3, v2: BtVector3) -> BtScalar {
+    pub fn triple(&self, v1: &BtVector3, v2: &BtVector3) -> BtScalar {
         unsafe {
             // cross:
             let mut t = _mm_shuffle_ps(v1.m_vec128.simd, v1.m_vec128.simd, bt_shuffle!(1, 2, 0, 3)); //    (Y Z X 0)
@@ -584,9 +584,9 @@ impl BtVector3 {
     /// - Parameter:  v The other vector
     /// - Parameter:  t The ration of this to v (t = 0 => return this, t=1 => return other)
     #[inline(always)]
-    pub fn lerp(&self, v: BtVector3, t: BtScalar) -> BtVector3 {
+    pub fn lerp(&self, v: &BtVector3, t: &BtScalar) -> BtVector3 {
         unsafe {
-            let mut vt = _mm_load_ss(&t); //    (t 0 0 0)
+            let mut vt = _mm_load_ss(t); //    (t 0 0 0)
             vt = bt_pshufd_ps!(vt, 0x80); //    (rt rt rt 0.0)
             let mut vl = _mm_sub_ps(v.m_vec128.simd, self.m_vec128.simd);
             vl = _mm_mul_ps(vl, vt);
@@ -735,6 +735,39 @@ impl BtVector3 {
     }
 }
 
+/// Return the dot product between two vectors
+#[inline(always)]
+pub fn bt_dot(v1: &BtVector3, v2: &BtVector3) -> BtScalar { return v1.dot(v2); }
+
+/**@brief Return the distance squared between two vectors */
+#[inline(always)]
+pub fn bt_distance2(v1: &BtVector3, v2: &BtVector3) -> BtScalar { return v1.distance2(v2); }
+
+/**@brief Return the distance between two vectors */
+#[inline(always)]
+pub fn bt_distance(v1: &BtVector3, v2: &BtVector3) -> BtScalar { return v1.distance(v2); }
+
+/**@brief Return the angle between two vectors */
+#[inline(always)]
+pub fn bt_angle(v1: &BtVector3, v2: &BtVector3) -> BtScalar { return v1.angle(v2); }
+
+/**@brief Return the cross product of two vectors */
+#[inline(always)]
+pub fn bt_cross(v1: &BtVector3, v2: &BtVector3) -> BtVector3 { return v1.cross(v2); }
+
+#[inline(always)]
+pub fn bt_triple(v1: &BtVector3, v2: &BtVector3, v3: &BtVector3) -> BtScalar {
+    return v1.triple(v2, v3);
+}
+
+/// Return the linear interpolation between two vectors
+/// - Parameter:  v1 One vector
+/// - Parameter:  v2 The other vector
+/// - Parameter:  t The ration of this to v (t = 0 => return v1, t=1 => return v2)
+#[inline(always)]
+pub fn lerp(v1: &BtVector3, v2: &BtVector3, t: &BtScalar) -> BtVector3 { return v1.lerp(v2, t); }
+
+//--------------------------------------------------------------------------------------------------
 #[test]
 pub fn test() {
     let mut a = BtVector3::new_default();
