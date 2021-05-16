@@ -1,7 +1,7 @@
 use crate::bt_scalar::{*};
 use crate::bt_casti_to128f;
 use std::arch::x86_64::{*};
-use std::ops::{AddAssign, SubAssign, MulAssign, DivAssign, Add, Mul, Sub, Neg, Div};
+use std::ops::{AddAssign, SubAssign, MulAssign, DivAssign, Add, Mul, Sub, Neg, Div, Deref};
 
 #[macro_export]
 macro_rules! bt_shuffle {
@@ -348,40 +348,46 @@ impl BtVector3 {
         }
     }
 
-    // /// Normalize this vector
-    // /// * x^2 + y^2 + z^2 = 1
-    // #[inline(always)]
-    // fn normalize(&mut self) {
-    //     unsafe {
-    //         // dot product first
-    //         let mut vd = _mm_mul_ps(self.m_vec128, self.m_vec128);
-    //         let mut z = _mm_movehl_ps(vd, vd);
-    //         let mut y = _mm_shuffle_ps(vd, vd, 0x55);
-    //         vd = _mm_add_ss(vd, y);
-    //         vd = _mm_add_ss(vd, z);
-    //
-    //         // NR step 1/sqrt(x) - vd is x, y is output
-    //         y = _mm_rsqrt_ss(vd); // estimate
-    //
-    //         //  one step NR
-    //         z = v_1_5!();
-    //         vd = _mm_mul_ss(vd, v_half!()); // vd * 0.5
-    //         // x2 = vd;
-    //         vd = _mm_mul_ss(vd, y); // vd * 0.5 * y0
-    //         vd = _mm_mul_ss(vd, y); // vd * 0.5 * y0 * y0
-    //         z = _mm_sub_ss(z, vd);  // 1.5 - vd * 0.5 * y0 * y0
-    //
-    //         y = _mm_mul_ss(y, z); // y0 * (1.5 - vd * 0.5 * y0 * y0)
-    //
-    //         y = bt_splat_ps!(y, 0x80);
-    //         self.m_vec128 = _mm_mul_ps(self.m_vec128, y);
-    //     }
-    // }
-    //
-    // // Return a normalized version of this vector
-    // #[inline(always)]
-    // fn normalized() -> BtVector3 {}
-    //
+    /// Normalize this vector
+    /// * x^2 + y^2 + z^2 = 1
+    #[inline(always)]
+    fn normalize(&mut self) -> &mut BtVector3 {
+        unsafe {
+            // dot product first
+            let mut vd = _mm_mul_ps(self.m_vec128.simd, self.m_vec128.simd);
+            let mut z = _mm_movehl_ps(vd, vd);
+            let mut y = _mm_shuffle_ps(vd, vd, 0x55);
+            vd = _mm_add_ss(vd, y);
+            vd = _mm_add_ss(vd, z);
+
+            // NR step 1/sqrt(x) - vd is x, y is output
+            y = _mm_rsqrt_ss(vd); // estimate
+
+            //  one step NR
+            z = v_1_5!();
+            vd = _mm_mul_ss(vd, v_half!()); // vd * 0.5
+            // x2 = vd;
+            vd = _mm_mul_ss(vd, y); // vd * 0.5 * y0
+            vd = _mm_mul_ss(vd, y); // vd * 0.5 * y0 * y0
+            z = _mm_sub_ss(z, vd);  // 1.5 - vd * 0.5 * y0 * y0
+
+            y = _mm_mul_ss(y, z); // y0 * (1.5 - vd * 0.5 * y0 * y0)
+
+            y = bt_splat_ps!(y, 0x80);
+            self.m_vec128.simd = _mm_mul_ps(self.m_vec128.simd, y);
+
+            return self;
+        }
+    }
+
+    // Return a normalized version of this vector
+    #[inline(always)]
+    fn normalized(&self) -> &BtVector3 {
+        let mut nrm = self.clone();
+
+        return nrm.normalized();
+    }
+
     // /// Return a rotated version of this vector
     // /// - Parameter: wAxis The axis to rotate about
     // /// - Parameter: angle The angle to rotate by
