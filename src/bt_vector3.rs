@@ -1,9 +1,17 @@
+/*
+ * // Copyright (c) 2021 Feng Yang
+ * //
+ * // I am making my contributions/submissions to this project solely in my
+ * // personal capacity and am not conveying any rights to any intellectual
+ * // property of any third parties.
+ */
+
 use crate::bt_scalar::{*};
 use crate::bt_casti_to128f;
 use crate::bt_castf_to128d;
 use crate::bt_castd_to128f;
 use std::arch::x86_64::{*};
-use std::ops::{AddAssign, SubAssign, MulAssign, DivAssign, Add, Mul, Sub, Neg, Div};
+use std::ops::{AddAssign, SubAssign, MulAssign, DivAssign, Add, Mul, Sub, Neg, Div, Index, IndexMut};
 
 #[macro_export]
 macro_rules! bt_shuffle {
@@ -117,6 +125,11 @@ union SimdToArray {
     simd: BtSimdFloat4,
 }
 
+/// btVector3 can be used to represent 3D points and vectors.
+/// It has an un-used w component to suit 16-byte alignment when btVector3 is stored in containers. This extra component
+/// can be used by derived classes (Quaternion?) or by user Ideally, this class should be replaced by a platform
+/// optimized SIMD version that keeps the data in registers
+///
 pub struct BtVector3 {
     m_vec128: SimdToArray,
 }
@@ -321,6 +334,24 @@ macro_rules! impl_vector_ops {
         }
 
         impl Eq for $Vector {}
+
+        impl Index<usize> for $Vector {
+            type Output = f32;
+
+            fn index(&self, index: usize) -> &Self::Output {
+                unsafe {
+                    return &self.m_vec128.array[index];
+                }
+            }
+        }
+
+        impl IndexMut<usize> for $Vector {
+            fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+                unsafe {
+                    return &mut self.m_vec128.array[index];
+                }
+            }
+        }
     }
 }
 
