@@ -1,5 +1,5 @@
 [package]
-name = "bullet"
+name = "bullet_rs"
 version = "0.0.1"
 authors = ["yangfeng <yangfengzzz@hotmail.com>"]
 edition = "2018"
