@@ -723,6 +723,7 @@ impl BtVector3 {
     /// - Parameter:  array The other vectors
     /// - Parameter:  array_count The number of other vectors
     /// - Parameter:  dotOut The minimum dot product */
+    /// TODO: It can be accelerated by using SIMD.
     #[inline(always)]
     pub fn min_dot(&self, array: Vec<BtVector3>, array_count: i64, dot_out: &mut BtScalar) -> i64 {
         let mut min_dot = SIMD_INFINITY;
