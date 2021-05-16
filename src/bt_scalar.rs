@@ -2,7 +2,7 @@ use std::arch::x86_64::__m128;
 
 pub type BtScalar = f32;
 
-const BT_LARGE_FLOAT: f32 = 1e18;
+pub const BT_LARGE_FLOAT: f32 = 1e18;
 
 pub type BtSimdFloat4 = __m128;
 

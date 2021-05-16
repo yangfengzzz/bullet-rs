@@ -1,5 +1,7 @@
 use crate::bt_scalar::{*};
 use crate::bt_casti_to128f;
+use crate::bt_castf_to128d;
+use crate::bt_castd_to128f;
 use std::arch::x86_64::{*};
 use std::ops::{AddAssign, SubAssign, MulAssign, DivAssign, Add, Mul, Sub, Neg, Div};
 
@@ -65,6 +67,21 @@ macro_rules! btv_fff0f_mask {
         bt_casti_to128f!(btv_fff0_mask!())
     };
 }
+
+#[macro_export]
+macro_rules! btv_xyz_maskf {
+    () => {
+        btv_fff0f_mask!()
+    };
+}
+
+#[macro_export]
+macro_rules! btv_absf_mask {
+    () => {
+        bt_casti_to128f!(btv_abs_mask!())
+    };
+}
+
 
 #[macro_export]
 macro_rules! btv_mzero_mask {
@@ -164,6 +181,15 @@ impl MulAssign<&BtScalar> for BtVector3 {
             let mut vs = _mm_load_ss(&*rhs); //    (S 0 0 0)
             vs = bt_pshufd_ps!(vs, 0x80); //    (S S S 0.0)
             self.m_vec128.simd = _mm_mul_ps(self.m_vec128.simd, vs)
+        }
+    }
+}
+
+impl MulAssign for BtVector3 {
+    #[inline(always)]
+    fn mul_assign(&mut self, rhs: BtVector3) {
+        unsafe {
+            self.m_vec128.simd = _mm_mul_ps(self.m_vec128.simd, rhs.m_vec128.simd);
         }
     }
 }
@@ -284,6 +310,16 @@ impl Div for BtVector3 {
     }
 }
 
+impl PartialEq for BtVector3 {
+    fn eq(&self, other: &Self) -> bool {
+        unsafe {
+            return 0xf == _mm_movemask_ps(_mm_cmpeq_ps(self.m_vec128.simd, other.m_vec128.simd));
+        }
+    }
+}
+
+impl Eq for BtVector3 {}
+
 //--------------------------------------------------------------------------------------------------
 impl BtVector3 {
     #[inline(always)]
@@ -326,14 +362,14 @@ impl BtVector3 {
     /// Return the distance squared between the ends of this and another vector
     /// This is symantically treating the vector like a point
     #[inline(always)]
-    fn distance2(&self, v: BtVector3) -> BtScalar {
+    pub fn distance2(&self, v: BtVector3) -> BtScalar {
         return (v - self).length2();
     }
 
     /// Return the distance between the ends of this and another vector
     /// This is symantically treating the vector like a point
     #[inline(always)]
-    fn distance(&self, v: BtVector3) -> BtScalar {
+    pub fn distance(&self, v: BtVector3) -> BtScalar {
         return (v - self).length();
     }
 
@@ -351,7 +387,7 @@ impl BtVector3 {
     /// Normalize this vector
     /// * x^2 + y^2 + z^2 = 1
     #[inline(always)]
-    fn normalize(&mut self) -> &mut BtVector3 {
+    pub fn normalize(&mut self) -> &mut BtVector3 {
         unsafe {
             // dot product first
             let mut vd = _mm_mul_ps(self.m_vec128.simd, self.m_vec128.simd);
@@ -382,7 +418,7 @@ impl BtVector3 {
 
     // Return a normalized version of this vector
     #[inline(always)]
-    fn normalized(&self) -> &BtVector3 {
+    pub fn normalized(&self) -> &BtVector3 {
         let nrm = self.clone();
 
         return nrm.normalized();
@@ -393,7 +429,7 @@ impl BtVector3 {
     /// - Parameter: angle The angle to rotate by
     #[inline(always)]
     #[allow(overflowing_literals)]
-    fn rotate(&self, w_axis: BtVector3, _angle: BtScalar) -> BtVector3 {
+    pub fn rotate(&self, w_axis: BtVector3, _angle: BtScalar) -> BtVector3 {
         unsafe {
             let mut o = _mm_mul_ps(w_axis.m_vec128.simd, self.m_vec128.simd);
             let ssin = _angle.sin();
@@ -426,14 +462,14 @@ impl BtVector3 {
     /// Return the angle between this and another vector
     /// - Parameter: v The other vector
     #[inline(always)]
-    fn angle(&self, v: &BtVector3) -> BtScalar {
+    pub fn angle(&self, v: &BtVector3) -> BtScalar {
         let s = (self.length2() * v.length2()).sqrt();
         return (self.dot(v) / s).cos();
     }
 
     /// Return a vector with the absolute values of each element
     #[inline(always)]
-    fn absolute(&self) -> BtVector3 {
+    pub fn absolute(&self) -> BtVector3 {
         unsafe {
             return BtVector3::new_simd(_mm_and_ps(self.m_vec128.simd, btv3_absf_mask!()));
         }
@@ -442,7 +478,7 @@ impl BtVector3 {
     /// Return the cross product between this and another vector
     /// - Parameter: v The other vector */
     #[inline(always)]
-    fn cross(&self, v: &BtVector3) -> BtVector3 {
+    pub fn cross(&self, v: &BtVector3) -> BtVector3 {
         unsafe {
             let mut t = bt_pshufd_ps!(self.m_vec128.simd, bt_shuffle!(1, 2, 0, 3));   //    (Y Z X 0)
             let mut vv = bt_pshufd_ps!(v.m_vec128.simd, bt_shuffle!(1, 2, 0, 3)); //    (Y Z X 0)
@@ -457,7 +493,7 @@ impl BtVector3 {
     }
 
     #[inline(always)]
-    fn triple(&self, v1: BtVector3, v2: BtVector3) -> BtScalar {
+    pub fn triple(&self, v1: BtVector3, v2: BtVector3) -> BtScalar {
         unsafe {
             // cross:
             let mut t = _mm_shuffle_ps(v1.m_vec128.simd, v1.m_vec128.simd, bt_shuffle!(1, 2, 0, 3)); //    (Y Z X 0)
@@ -482,7 +518,7 @@ impl BtVector3 {
     /// Return the axis with the smallest value
     /// Note return values are 0,1,2 for x, y, or z
     #[inline(always)]
-    fn min_axis(&self) -> i32 {
+    pub fn min_axis(&self) -> i32 {
         unsafe {
             return match self.m_vec128.array[0] < self.m_vec128.array[1] {
                 true => {
@@ -504,7 +540,7 @@ impl BtVector3 {
     /// Return the axis with the largest value
     /// Note return values are 0,1,2 for x, y, or z
     #[inline(always)]
-    fn max_axis(&self) -> i32 {
+    pub fn max_axis(&self) -> i32 {
         unsafe {
             return match self.m_vec128.array[0] < self.m_vec128.array[1] {
                 true => {
@@ -524,14 +560,178 @@ impl BtVector3 {
     }
 
     #[inline(always)]
-    fn furthest_axis(&self) -> i32 { return self.absolute().min_axis(); }
+    pub fn furthest_axis(&self) -> i32 { return self.absolute().min_axis(); }
 
     #[inline(always)]
-    fn closest_axis(&self) -> i32 { return self.absolute().max_axis(); }
+    pub fn closest_axis(&self) -> i32 { return self.absolute().max_axis(); }
+
+    #[inline(always)]
+    pub fn set_interpolate3(&mut self, v0: BtVector3, v1: BtVector3, rt: BtScalar) {
+        unsafe {
+            let mut vrt = _mm_load_ss(&rt); //    (rt 0 0 0)
+            let s = 1.0 - rt;
+            let mut vs = _mm_load_ss(&s); //    (S 0 0 0)
+            vs = bt_pshufd_ps!(vs, 0x80); //    (S S S 0.0)
+            let r0 = _mm_mul_ps(v0.m_vec128.simd, vs);
+            vrt = bt_pshufd_ps!(vrt, 0x80); //    (rt rt rt 0.0)
+            let r1 = _mm_mul_ps(v1.m_vec128.simd, vrt);
+            let tmp3 = _mm_add_ps(r0, r1);
+            self.m_vec128.simd = tmp3;
+        }
+    }
+
+    /// Return the linear interpolation between this and another vector
+    /// - Parameter:  v The other vector
+    /// - Parameter:  t The ration of this to v (t = 0 => return this, t=1 => return other)
+    #[inline(always)]
+    pub fn lerp(&self, v: BtVector3, t: BtScalar) -> BtVector3 {
+        unsafe {
+            let mut vt = _mm_load_ss(&t); //    (t 0 0 0)
+            vt = bt_pshufd_ps!(vt, 0x80); //    (rt rt rt 0.0)
+            let mut vl = _mm_sub_ps(v.m_vec128.simd, self.m_vec128.simd);
+            vl = _mm_mul_ps(vl, vt);
+            vl = _mm_add_ps(vl, self.m_vec128.simd);
+
+            return BtVector3::new_simd(vl);
+        }
+    }
+
+    /// Return the x value */
+    #[inline(always)]
+    pub fn get_x(&self) -> BtScalar { unsafe { return self.m_vec128.array[0]; } }
+
+    /// Return the y value */
+    #[inline(always)]
+    pub fn get_y(&self) -> BtScalar { unsafe { return self.m_vec128.array[1]; } }
+
+    /// Return the z value */
+    #[inline(always)]
+    pub fn get_z(&self) -> BtScalar { unsafe { return self.m_vec128.array[2]; } }
+
+    /// Set the x value */
+    #[inline(always)]
+    pub fn set_x(&mut self, _x: BtScalar) { unsafe { self.m_vec128.array[0] = _x; } }
+
+    /// Set the y value */
+    #[inline(always)]
+    pub fn set_y(&mut self, _y: BtScalar) { unsafe { self.m_vec128.array[1] = _y; } }
+
+    /// Set the z value */
+    #[inline(always)]
+    pub fn set_z(&mut self, _z: BtScalar) { unsafe { self.m_vec128.array[2] = _z; } }
+
+    /// Set the w value */
+    #[inline(always)]
+    pub fn set_w(&mut self, _w: BtScalar) { unsafe { self.m_vec128.array[3] = _w; } }
+
+    /// Return the x value */
+    #[inline(always)]
+    pub fn x(&self) -> BtScalar { unsafe { return self.m_vec128.array[0]; } }
+
+    /// Return the y value */
+    #[inline(always)]
+    pub fn y(&self) -> BtScalar { unsafe { return self.m_vec128.array[1]; } }
+
+    /// Return the z value */
+    #[inline(always)]
+    pub fn z(&self) -> BtScalar { unsafe { return self.m_vec128.array[2]; } }
+
+    /// Return the w value */
+    #[inline(always)]
+    pub fn w(&self) -> BtScalar { unsafe { return self.m_vec128.array[3]; } }
+
+    /// Set each element to the max of the current values and the values of another btVector3
+    /// - Parameter:  other The other btVector3 to compare with
+    #[inline(always)]
+    pub fn set_max(&mut self, other: BtVector3) {
+        unsafe {
+            self.m_vec128.simd = _mm_max_ps(self.m_vec128.simd, other.m_vec128.simd);
+        }
+    }
+
+    /// Set each element to the min of the current values and the values of another btVector3
+    /// - Parameter:  other The other btVector3 to compare with
+    #[inline(always)]
+    pub fn set_min(&mut self, other: BtVector3) {
+        unsafe {
+            self.m_vec128.simd = _mm_min_ps(self.m_vec128.simd, other.m_vec128.simd);
+        }
+    }
 
     #[inline(always)]
     pub fn set_value(&mut self, _x: BtScalar, _y: BtScalar, _z: BtScalar) {
         self.m_vec128.array = [_x, _y, _z, 0.0]
+    }
+
+    #[allow(overflowing_literals)]
+    pub fn get_skew_symmetric_matrix(&self, v0: &mut BtVector3, v1: &mut BtVector3, v2: &mut BtVector3) {
+        unsafe {
+            let v = _mm_and_ps(self.m_vec128.simd, btv_fff0f_mask!());
+            let mut vv0 = _mm_xor_ps(btv_mzero_mask!(), v);
+            let mut vv2 = _mm_movelh_ps(vv0, v);
+
+            let vv1 = _mm_shuffle_ps(v, vv0, 0xCE);
+
+            vv0 = _mm_shuffle_ps(vv0, v, 0xDB);
+            vv2 = _mm_shuffle_ps(vv2, v, 0xF9);
+
+            v0.m_vec128.simd = vv0;
+            v1.m_vec128.simd = vv1;
+            v2.m_vec128.simd = vv2;
+        }
+    }
+
+    pub fn set_zero(&mut self) {
+        unsafe {
+            self.m_vec128.simd = _mm_xor_ps(self.m_vec128.simd, self.m_vec128.simd);
+        }
+    }
+
+    #[inline(always)]
+    pub fn is_zero(&self) -> bool {
+        unsafe {
+            return self.m_vec128.array[0] == 0.0 && self.m_vec128.array[1] == 0.0 && self.m_vec128.array[2] == 0.0;
+        }
+    }
+
+    #[inline(always)]
+    pub fn fuzzy_zero(&self) -> bool { return self.length2() < SIMD_EPSILON * SIMD_EPSILON; }
+
+    /// returns index of maximum dot product between this and vectors in array[]
+    /// - Parameter:  array The other vectors
+    /// - Parameter:  array_count The number of other vectors
+    /// - Parameter:  dotOut The maximum dot product */
+    #[inline(always)]
+    pub fn max_dot(&self, array: BtVector3, array_count: i64, dot_out: &mut BtScalar) -> i64 {
+        return 0;
+    }
+
+    /// returns index of minimum dot product between this and vectors in array[]
+    /// - Parameter:  array The other vectors
+    /// - Parameter:  array_count The number of other vectors
+    /// - Parameter:  dotOut The minimum dot product */
+    #[inline(always)]
+    pub fn min_dot(&self, array: BtVector3, array_count: i64, dot_out: &mut BtScalar) -> i64 {
+        return 0;
+    }
+
+    //// create a vector as  btVector3( this->dot( btVector3 v0 ), this->dot( btVector3 v1), this->dot( btVector3 v2 ))
+    #[inline(always)]
+    #[allow(overflowing_literals)]
+    pub fn dot3(&self, v0: BtVector3, v1: BtVector3, v2: BtVector3) -> BtVector3 {
+        unsafe {
+            let a0 = _mm_mul_ps(v0.m_vec128.simd, self.m_vec128.simd);
+            let a1 = _mm_mul_ps(v1.m_vec128.simd, self.m_vec128.simd);
+            let mut a2 = _mm_mul_ps(v2.m_vec128.simd, self.m_vec128.simd);
+            let b0 = _mm_unpacklo_ps(a0, a1);
+            let b1 = _mm_unpackhi_ps(a0, a1);
+            let b2 = _mm_unpacklo_ps(a2, _mm_setzero_ps());
+            let mut r = _mm_movelh_ps(b0, b2);
+            r = _mm_add_ps(r, _mm_movehl_ps(b2, b0));
+            a2 = _mm_and_ps(a2, btv_xyz_maskf!());
+            r = _mm_add_ps(r, bt_castd_to128f!(_mm_move_sd( bt_castf_to128d!(a2), bt_castf_to128d!(b1))));
+            return BtVector3::new_simd(r);
+        }
     }
 }
 
