@@ -149,176 +149,182 @@ impl BtVector3 {
     }
 }
 
-impl AddAssign for BtVector3 {
-    #[inline(always)]
-    fn add_assign(&mut self, rhs: Self) {
-        self.m_vec128.simd = unsafe { _mm_sub_ps(self.m_vec128.simd, rhs.m_vec128.simd) }
-    }
-}
-
-impl SubAssign for BtVector3 {
-    #[inline(always)]
-    fn sub_assign(&mut self, rhs: Self) {
-        self.m_vec128.simd = unsafe { _mm_sub_ps(self.m_vec128.simd, rhs.m_vec128.simd) }
-    }
-}
-
-impl MulAssign<BtScalar> for BtVector3 {
-    #[inline(always)]
-    fn mul_assign(&mut self, rhs: BtScalar) {
-        unsafe {
-            let mut vs = _mm_load_ss(&rhs); //    (S 0 0 0)
-            vs = bt_pshufd_ps!(vs, 0x80); //    (S S S 0.0)
-            self.m_vec128.simd = _mm_mul_ps(self.m_vec128.simd, vs)
+macro_rules! impl_vector_ops {
+    ($Vector:ty, $VecNew:path) => {
+        impl AddAssign for $Vector {
+            #[inline(always)]
+            fn add_assign(&mut self, rhs: Self) {
+                self.m_vec128.simd = unsafe { _mm_sub_ps(self.m_vec128.simd, rhs.m_vec128.simd) }
+            }
         }
-    }
-}
 
-impl MulAssign<&BtScalar> for BtVector3 {
-    #[inline(always)]
-    fn mul_assign(&mut self, rhs: &BtScalar) {
-        unsafe {
-            let mut vs = _mm_load_ss(&*rhs); //    (S 0 0 0)
-            vs = bt_pshufd_ps!(vs, 0x80); //    (S S S 0.0)
-            self.m_vec128.simd = _mm_mul_ps(self.m_vec128.simd, vs)
+        impl SubAssign for $Vector {
+            #[inline(always)]
+            fn sub_assign(&mut self, rhs: Self) {
+                self.m_vec128.simd = unsafe { _mm_sub_ps(self.m_vec128.simd, rhs.m_vec128.simd) }
+            }
         }
-    }
-}
 
-impl MulAssign for BtVector3 {
-    #[inline(always)]
-    fn mul_assign(&mut self, rhs: BtVector3) {
-        unsafe {
-            self.m_vec128.simd = _mm_mul_ps(self.m_vec128.simd, rhs.m_vec128.simd);
-        }
-    }
-}
-
-impl DivAssign<BtScalar> for BtVector3 {
-    #[inline(always)]
-    fn div_assign(&mut self, rhs: BtScalar) {
-        self.mul_assign(1.0 / rhs)
-    }
-}
-
-macro_rules! impl_bin_add_vector {
-    ($lhs:ty, $rhs:ty) => {
-        /// Return the sum of two vectors (Point symantics)
-        impl Add<$rhs> for $lhs {
-            type Output = BtVector3;
-
-            fn add(self, rhs: $rhs) -> Self::Output {
+        impl MulAssign<BtScalar> for $Vector {
+            #[inline(always)]
+            fn mul_assign(&mut self, rhs: BtScalar) {
                 unsafe {
-                    return BtVector3::new_simd(_mm_add_ps(self.m_vec128.simd, rhs.m_vec128.simd));
+                    let mut vs = _mm_load_ss(&rhs); //    (S 0 0 0)
+                    vs = bt_pshufd_ps!(vs, 0x80); //    (S S S 0.0)
+                    self.m_vec128.simd = _mm_mul_ps(self.m_vec128.simd, vs)
                 }
             }
         }
-    }
-}
 
-impl_bin_add_vector!(BtVector3, BtVector3);
-impl_bin_add_vector!(&BtVector3, BtVector3);
-impl_bin_add_vector!(BtVector3, &BtVector3);
-impl_bin_add_vector!(&BtVector3, &BtVector3);
-
-macro_rules! impl_bin_mul_vector {
-    ($lhs:ty, $rhs:ty) => {
-        /// Return the sum of two vectors (Point symantics)
-        impl Mul<$rhs> for $lhs {
-            type Output = BtVector3;
-
-            fn mul(self, rhs: $rhs) -> Self::Output {
+        impl MulAssign<&BtScalar> for $Vector {
+            #[inline(always)]
+            fn mul_assign(&mut self, rhs: &BtScalar) {
                 unsafe {
-                    return BtVector3::new_simd(_mm_mul_ps(self.m_vec128.simd, rhs.m_vec128.simd));
+                    let mut vs = _mm_load_ss(&*rhs); //    (S 0 0 0)
+                    vs = bt_pshufd_ps!(vs, 0x80); //    (S S S 0.0)
+                    self.m_vec128.simd = _mm_mul_ps(self.m_vec128.simd, vs)
                 }
             }
         }
-    }
-}
 
-impl_bin_mul_vector!(BtVector3, BtVector3);
-impl_bin_mul_vector!(&BtVector3, BtVector3);
-impl_bin_mul_vector!(BtVector3, &BtVector3);
-impl_bin_mul_vector!(&BtVector3, &BtVector3);
+        impl MulAssign for $Vector {
+            #[inline(always)]
+            fn mul_assign(&mut self, rhs: $Vector) {
+                unsafe {
+                    self.m_vec128.simd = _mm_mul_ps(self.m_vec128.simd, rhs.m_vec128.simd);
+                }
+            }
+        }
 
-macro_rules! impl_bin_sub_vector {
-    ($lhs:ty, $rhs:ty) => {
-        // Return the difference between two vectors
-        impl Sub<$rhs> for $lhs {
-            type Output = BtVector3;
+        impl DivAssign<BtScalar> for $Vector {
+            #[inline(always)]
+            fn div_assign(&mut self, rhs: BtScalar) {
+                self.mul_assign(1.0 / rhs)
+            }
+        }
+
+        macro_rules! impl_bin_add_vector {
+            ($lhs:ty, $rhs:ty) => {
+                /// Return the sum of two vectors (Point symantics)
+                impl Add<$rhs> for $lhs {
+                    type Output = $Vector;
+
+                    fn add(self, rhs: $rhs) -> Self::Output {
+                        unsafe {
+                            return $VecNew(_mm_add_ps(self.m_vec128.simd, rhs.m_vec128.simd));
+                        }
+                    }
+                }
+            }
+        }
+
+        impl_bin_add_vector!($Vector, $Vector);
+        impl_bin_add_vector!(&$Vector, BtVector3);
+        impl_bin_add_vector!($Vector, &$Vector);
+        impl_bin_add_vector!(&$Vector, &$Vector);
+
+        macro_rules! impl_bin_mul_vector {
+            ($lhs:ty, $rhs:ty) => {
+                /// Return the sum of two vectors (Point symantics)
+                impl Mul<$rhs> for $lhs {
+                    type Output = $Vector;
+
+                    fn mul(self, rhs: $rhs) -> Self::Output {
+                        unsafe {
+                            return $VecNew(_mm_mul_ps(self.m_vec128.simd, rhs.m_vec128.simd));
+                        }
+                    }
+                }
+            }
+        }
+
+        impl_bin_mul_vector!($Vector, $Vector);
+        impl_bin_mul_vector!(&$Vector, $Vector);
+        impl_bin_mul_vector!($Vector, &$Vector);
+        impl_bin_mul_vector!(&$Vector, &$Vector);
+
+        macro_rules! impl_bin_sub_vector {
+            ($lhs:ty, $rhs:ty) => {
+                // Return the difference between two vectors
+                impl Sub<$rhs> for $lhs {
+                    type Output = $Vector;
+
+                    #[allow(overflowing_literals)]
+                    fn sub(self, rhs: $rhs) -> Self::Output {
+                        unsafe {
+                            let r = _mm_sub_ps(self.m_vec128.simd, rhs.m_vec128.simd);
+                            let b = btv_fff0f_mask!();
+                            return $VecNew(_mm_and_ps(r, b));
+                        }
+                    }
+                }
+            }
+        }
+
+        impl_bin_sub_vector!($Vector, $Vector);
+        impl_bin_sub_vector!(&$Vector, $Vector);
+        impl_bin_sub_vector!($Vector, &$Vector);
+        impl_bin_sub_vector!(&$Vector, &$Vector);
+
+        /// Return the negative of the vector
+        impl Neg for $Vector {
+            type Output = $Vector;
 
             #[allow(overflowing_literals)]
-            fn sub(self, rhs: $rhs) -> Self::Output {
+            fn neg(self) -> Self::Output {
                 unsafe {
-                    let r = _mm_sub_ps(self.m_vec128.simd, rhs.m_vec128.simd);
-                    let b = btv_fff0f_mask!();
-                    return BtVector3::new_simd(_mm_and_ps(r, b));
+                    let r = _mm_xor_ps(self.m_vec128.simd, btv_mzero_mask!());
+                    return $VecNew(_mm_and_ps(r, btv_fff0f_mask!()));
                 }
             }
         }
-    }
-}
 
-impl_bin_sub_vector!(BtVector3, BtVector3);
-impl_bin_sub_vector!(&BtVector3, BtVector3);
-impl_bin_sub_vector!(BtVector3, &BtVector3);
-impl_bin_sub_vector!(&BtVector3, &BtVector3);
+        impl Mul<BtScalar> for $Vector {
+            type Output = $Vector;
 
-/// Return the negative of the vector
-impl Neg for BtVector3 {
-    type Output = BtVector3;
-
-    #[allow(overflowing_literals)]
-    fn neg(self) -> Self::Output {
-        unsafe {
-            let r = _mm_xor_ps(self.m_vec128.simd, btv_mzero_mask!());
-            return BtVector3::new_simd(_mm_and_ps(r, btv_fff0f_mask!()));
+            fn mul(self, rhs: f32) -> Self::Output {
+                unsafe {
+                    let mut vs = _mm_load_ss(&rhs); //    (S 0 0 0)
+                    vs = bt_pshufd_ps!(vs, 0x80); //    (S S S 0.0)
+                    return $VecNew(_mm_mul_ps(self.m_vec128.simd, vs));
+                }
+            }
         }
-    }
-}
 
-impl Mul<BtScalar> for BtVector3 {
-    type Output = BtVector3;
+        impl Div<BtScalar> for $Vector {
+            type Output = $Vector;
 
-    fn mul(self, rhs: f32) -> Self::Output {
-        unsafe {
-            let mut vs = _mm_load_ss(&rhs); //    (S 0 0 0)
-            vs = bt_pshufd_ps!(vs, 0x80); //    (S S S 0.0)
-            return BtVector3::new_simd(_mm_mul_ps(self.m_vec128.simd, vs));
+            fn div(self, rhs: f32) -> Self::Output {
+                return self * 1.0 / rhs;
+            }
         }
-    }
-}
 
-impl Div<BtScalar> for BtVector3 {
-    type Output = BtVector3;
+        impl Div for $Vector {
+            type Output = $Vector;
 
-    fn div(self, rhs: f32) -> Self::Output {
-        return self * 1.0 / rhs;
-    }
-}
-
-impl Div for BtVector3 {
-    type Output = BtVector3;
-
-    #[allow(overflowing_literals)]
-    fn div(self, rhs: Self) -> Self::Output {
-        unsafe {
-            let mut vec = _mm_div_ps(self.m_vec128.simd, rhs.m_vec128.simd);
-            vec = _mm_and_ps(vec, btv_fff0f_mask!());
-            return BtVector3::new_simd(vec);
+            #[allow(overflowing_literals)]
+            fn div(self, rhs: Self) -> Self::Output {
+                unsafe {
+                    let mut vec = _mm_div_ps(self.m_vec128.simd, rhs.m_vec128.simd);
+                    vec = _mm_and_ps(vec, btv_fff0f_mask!());
+                    return $VecNew(vec);
+                }
+            }
         }
-    }
-}
 
-impl PartialEq for BtVector3 {
-    fn eq(&self, other: &Self) -> bool {
-        unsafe {
-            return 0xf == _mm_movemask_ps(_mm_cmpeq_ps(self.m_vec128.simd, other.m_vec128.simd));
+        impl PartialEq for $Vector {
+            fn eq(&self, other: &Self) -> bool {
+                unsafe {
+                    return 0xf == _mm_movemask_ps(_mm_cmpeq_ps(self.m_vec128.simd, other.m_vec128.simd));
+                }
+            }
         }
+
+        impl Eq for $Vector {}
     }
 }
 
-impl Eq for BtVector3 {}
+impl_vector_ops!(BtVector3, BtVector3::new_simd);
 
 //--------------------------------------------------------------------------------------------------
 impl BtVector3 {
@@ -756,6 +762,7 @@ impl BtVector3 {
     /// assert_eq!(result.x(), 10.0);
     /// assert_eq!(result.y(), 20.0);
     /// assert_eq!(result.z(), 30.0);
+    /// ```
     ///
     #[inline(always)]
     #[allow(overflowing_literals)]
@@ -809,6 +816,40 @@ pub fn bt_triple(v1: &BtVector3, v2: &BtVector3, v3: &BtVector3) -> BtScalar {
 pub fn lerp(v1: &BtVector3, v2: &BtVector3, t: &BtScalar) -> BtVector3 { return v1.lerp(v2, t); }
 
 //--------------------------------------------------------------------------------------------------
+pub struct BtVector4 {
+    m_vec128: SimdToArray,
+}
+
+impl BtVector4 {
+    #[inline(always)]
+    pub fn get128(&self) -> BtSimdFloat4 { unsafe { return self.m_vec128.simd; } }
+
+    #[inline(always)]
+    pub fn set128(&mut self, v128: BtSimdFloat4) { self.m_vec128.simd = v128; }
+
+    pub fn new_default() -> BtVector4 {
+        return BtVector4 {
+            m_vec128: SimdToArray { array: [0.0, 0.0, 0.0, 0.0] }
+        };
+    }
+
+    /// Constructor from scalars
+    pub fn new(_x: BtScalar, _y: BtScalar, _z: BtScalar, _w: BtScalar) -> BtVector4 {
+        return BtVector4 {
+            m_vec128: SimdToArray { array: [_x, _y, _z, _w] }
+        };
+    }
+
+    /// Set Vector
+    pub fn new_simd(v: BtSimdFloat4) -> BtVector4 {
+        return BtVector4 {
+            m_vec128: SimdToArray { simd: v }
+        };
+    }
+}
+
+impl_vector_ops!(BtVector4, BtVector4::new_simd);
+
 #[test]
 pub fn test() {
     let mut a = BtVector3::new_default();
