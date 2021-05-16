@@ -664,6 +664,10 @@ impl BtVector3 {
         }
     }
 
+    /// Set the values
+    /// - Parameter: x Value of x
+    /// - Parameter: y Value of y
+    /// - Parameter: z Value of z
     #[inline(always)]
     pub fn set_value(&mut self, _x: BtScalar, _y: BtScalar, _z: BtScalar) {
         self.m_vec128.array = [_x, _y, _z, 0.0]
@@ -849,6 +853,124 @@ impl BtVector4 {
 }
 
 impl_vector_ops!(BtVector4, BtVector4::new_simd);
+
+impl BtVector4 {
+    /// Return a vector with the absolute values of each element
+    #[inline(always)]
+    pub fn absolute(&self) -> BtVector4 {
+        unsafe {
+            return BtVector4::new_simd(_mm_and_ps(self.m_vec128.simd, btv_absf_mask!()));
+        }
+    }
+
+    /// Return the x value */
+    #[inline(always)]
+    pub fn get_x(&self) -> BtScalar { unsafe { return self.m_vec128.array[0]; } }
+
+    /// Return the y value */
+    #[inline(always)]
+    pub fn get_y(&self) -> BtScalar { unsafe { return self.m_vec128.array[1]; } }
+
+    /// Return the z value */
+    #[inline(always)]
+    pub fn get_z(&self) -> BtScalar { unsafe { return self.m_vec128.array[2]; } }
+
+    #[inline(always)]
+    pub fn get_w(&self) -> BtScalar { unsafe { return self.m_vec128.array[3]; } }
+
+    /// Set the x value */
+    #[inline(always)]
+    pub fn set_x(&mut self, _x: BtScalar) { unsafe { self.m_vec128.array[0] = _x; } }
+
+    /// Set the y value */
+    #[inline(always)]
+    pub fn set_y(&mut self, _y: BtScalar) { unsafe { self.m_vec128.array[1] = _y; } }
+
+    /// Set the z value */
+    #[inline(always)]
+    pub fn set_z(&mut self, _z: BtScalar) { unsafe { self.m_vec128.array[2] = _z; } }
+
+    /// Set the w value */
+    #[inline(always)]
+    pub fn set_w(&mut self, _w: BtScalar) { unsafe { self.m_vec128.array[3] = _w; } }
+
+    /// Return the x value */
+    #[inline(always)]
+    pub fn x(&self) -> BtScalar { unsafe { return self.m_vec128.array[0]; } }
+
+    /// Return the y value */
+    #[inline(always)]
+    pub fn y(&self) -> BtScalar { unsafe { return self.m_vec128.array[1]; } }
+
+    /// Return the z value */
+    #[inline(always)]
+    pub fn z(&self) -> BtScalar { unsafe { return self.m_vec128.array[2]; } }
+
+    /// Return the w value */
+    #[inline(always)]
+    pub fn w(&self) -> BtScalar { unsafe { return self.m_vec128.array[3]; } }
+
+    #[inline(always)]
+    pub fn max_axis(&self) -> i32 {
+        let mut max_index = -1;
+        let mut max_val = -BT_LARGE_FLOAT;
+        unsafe {
+            if self.m_vec128.array[0] > max_val {
+                max_index = 0;
+                max_val = self.m_vec128.array[0];
+            }
+            if self.m_vec128.array[1] > max_val {
+                max_index = 1;
+                max_val = self.m_vec128.array[1];
+            }
+            if self.m_vec128.array[2] > max_val {
+                max_index = 2;
+                max_val = self.m_vec128.array[2];
+            }
+            if self.m_vec128.array[3] > max_val {
+                max_index = 3;
+            }
+        }
+        return max_index;
+    }
+
+    #[inline(always)]
+    pub fn min_axis(&self) -> i32 {
+        let mut min_index = -1;
+        let mut min_val = BT_LARGE_FLOAT;
+        unsafe {
+            if self.m_vec128.array[0] < min_val {
+                min_index = 0;
+                min_val = self.m_vec128.array[0];
+            }
+            if self.m_vec128.array[1] < min_val {
+                min_index = 1;
+                min_val = self.m_vec128.array[1];
+            }
+            if self.m_vec128.array[2] < min_val {
+                min_index = 2;
+                min_val = self.m_vec128.array[2];
+            }
+            if self.m_vec128.array[3] < min_val {
+                min_index = 3;
+            }
+        }
+        return min_index;
+    }
+
+    #[inline(always)]
+    pub fn closest_axis(&self) -> i32 { return self.absolute().max_axis(); }
+
+    /// Set the values
+    /// - Parameter: x Value of x
+    /// - Parameter: y Value of y
+    /// - Parameter: z Value of z
+    /// - Parameter: w Value of w
+    #[inline(always)]
+    pub fn set_value(&mut self, _x: BtScalar, _y: BtScalar, _z: BtScalar, _w: BtScalar) {
+        self.m_vec128.array = [_x, _y, _z, _w]
+    }
+}
 
 #[test]
 pub fn test() {
