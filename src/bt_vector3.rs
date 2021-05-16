@@ -12,6 +12,7 @@ use crate::bt_castf_to128d;
 use crate::bt_castd_to128f;
 use std::arch::x86_64::{*};
 use std::ops::{AddAssign, SubAssign, MulAssign, DivAssign, Add, Mul, Sub, Neg, Div, Index, IndexMut};
+use std::fmt::{Debug, Formatter, Result};
 
 #[macro_export]
 macro_rules! bt_shuffle {
@@ -365,6 +366,33 @@ macro_rules! impl_vector_ops {
 
 impl_vector_ops!(BtVector3, BtVector3::new_simd);
 
+impl Debug for BtVector3 {
+    /// # Example
+    /// ```
+    ///
+    /// use bullet_rs::bt_vector3::BtVector3;
+    /// let vec = BtVector3::new(10.0, 20.0, 40.0);
+    /// assert_eq!(format!("{:?}", vec), "(10.0, 20.0, 40.0, 0.0)");
+    ///
+    /// assert_eq!(format!("{:#?}", vec), "(
+    ///     10.0,
+    ///     20.0,
+    ///     40.0,
+    ///     0.0,
+    /// )");
+    /// ```
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        unsafe {
+            f.debug_tuple("")
+                .field(&self.m_vec128.array[0])
+                .field(&self.m_vec128.array[1])
+                .field(&self.m_vec128.array[2])
+                .field(&self.m_vec128.array[3])
+                .finish()
+        }
+    }
+}
+
 //--------------------------------------------------------------------------------------------------
 impl BtVector3 {
     #[inline(always)]
@@ -521,7 +549,7 @@ impl BtVector3 {
     }
 
     /// Return the cross product between this and another vector
-    /// - Parameter: v The other vector */
+    /// - Parameter: v The other vector
     #[inline(always)]
     pub fn cross(&self, v: &BtVector3) -> BtVector3 {
         unsafe {
@@ -641,47 +669,47 @@ impl BtVector3 {
         }
     }
 
-    /// Return the x value */
+    /// Return the x value
     #[inline(always)]
     pub fn get_x(&self) -> BtScalar { unsafe { return self.m_vec128.array[0]; } }
 
-    /// Return the y value */
+    /// Return the y value
     #[inline(always)]
     pub fn get_y(&self) -> BtScalar { unsafe { return self.m_vec128.array[1]; } }
 
-    /// Return the z value */
+    /// Return the z value
     #[inline(always)]
     pub fn get_z(&self) -> BtScalar { unsafe { return self.m_vec128.array[2]; } }
 
-    /// Set the x value */
+    /// Set the x value
     #[inline(always)]
     pub fn set_x(&mut self, _x: BtScalar) { unsafe { self.m_vec128.array[0] = _x; } }
 
-    /// Set the y value */
+    /// Set the y value
     #[inline(always)]
     pub fn set_y(&mut self, _y: BtScalar) { unsafe { self.m_vec128.array[1] = _y; } }
 
-    /// Set the z value */
+    /// Set the z value
     #[inline(always)]
     pub fn set_z(&mut self, _z: BtScalar) { unsafe { self.m_vec128.array[2] = _z; } }
 
-    /// Set the w value */
+    /// Set the w value
     #[inline(always)]
     pub fn set_w(&mut self, _w: BtScalar) { unsafe { self.m_vec128.array[3] = _w; } }
 
-    /// Return the x value */
+    /// Return the x value
     #[inline(always)]
     pub fn x(&self) -> BtScalar { unsafe { return self.m_vec128.array[0]; } }
 
-    /// Return the y value */
+    /// Return the y value
     #[inline(always)]
     pub fn y(&self) -> BtScalar { unsafe { return self.m_vec128.array[1]; } }
 
-    /// Return the z value */
+    /// Return the z value
     #[inline(always)]
     pub fn z(&self) -> BtScalar { unsafe { return self.m_vec128.array[2]; } }
 
-    /// Return the w value */
+    /// Return the w value
     #[inline(always)]
     pub fn w(&self) -> BtScalar { unsafe { return self.m_vec128.array[3]; } }
 
@@ -749,7 +777,7 @@ impl BtVector3 {
     /// returns index of maximum dot product between this and vectors in array[]
     /// - Parameter:  array The other vectors
     /// - Parameter:  array_count The number of other vectors
-    /// - Parameter:  dotOut The maximum dot product */
+    /// - Parameter:  dotOut The maximum dot product
     /// TODO: It can be accelerated by using SIMD.
     #[inline(always)]
     pub fn max_dot(&self, array: Vec<BtVector3>, array_count: i64, dot_out: &mut BtScalar) -> i64 {
@@ -771,7 +799,7 @@ impl BtVector3 {
     /// returns index of minimum dot product between this and vectors in array[]
     /// - Parameter:  array The other vectors
     /// - Parameter:  array_count The number of other vectors
-    /// - Parameter:  dotOut The minimum dot product */
+    /// - Parameter:  dotOut The minimum dot product
     /// TODO: It can be accelerated by using SIMD.
     #[inline(always)]
     pub fn min_dot(&self, array: Vec<BtVector3>, array_count: i64, dot_out: &mut BtScalar) -> i64 {
@@ -830,19 +858,19 @@ impl BtVector3 {
 #[inline(always)]
 pub fn bt_dot(v1: &BtVector3, v2: &BtVector3) -> BtScalar { return v1.dot(v2); }
 
-/// Return the distance squared between two vectors */
+/// Return the distance squared between two vectors
 #[inline(always)]
 pub fn bt_distance2(v1: &BtVector3, v2: &BtVector3) -> BtScalar { return v1.distance2(v2); }
 
-/// Return the distance between two vectors */
+/// Return the distance between two vectors
 #[inline(always)]
 pub fn bt_distance(v1: &BtVector3, v2: &BtVector3) -> BtScalar { return v1.distance(v2); }
 
-/// Return the angle between two vectors */
+/// Return the angle between two vectors
 #[inline(always)]
 pub fn bt_angle(v1: &BtVector3, v2: &BtVector3) -> BtScalar { return v1.angle(v2); }
 
-/// Return the cross product of two vectors */
+/// Return the cross product of two vectors
 #[inline(always)]
 pub fn bt_cross(v1: &BtVector3, v2: &BtVector3) -> BtVector3 { return v1.cross(v2); }
 
@@ -902,50 +930,50 @@ impl BtVector4 {
         }
     }
 
-    /// Return the x value */
+    /// Return the x value
     #[inline(always)]
     pub fn get_x(&self) -> BtScalar { unsafe { return self.m_vec128.array[0]; } }
 
-    /// Return the y value */
+    /// Return the y value
     #[inline(always)]
     pub fn get_y(&self) -> BtScalar { unsafe { return self.m_vec128.array[1]; } }
 
-    /// Return the z value */
+    /// Return the z value
     #[inline(always)]
     pub fn get_z(&self) -> BtScalar { unsafe { return self.m_vec128.array[2]; } }
 
     #[inline(always)]
     pub fn get_w(&self) -> BtScalar { unsafe { return self.m_vec128.array[3]; } }
 
-    /// Set the x value */
+    /// Set the x value
     #[inline(always)]
     pub fn set_x(&mut self, _x: BtScalar) { unsafe { self.m_vec128.array[0] = _x; } }
 
-    /// Set the y value */
+    /// Set the y value
     #[inline(always)]
     pub fn set_y(&mut self, _y: BtScalar) { unsafe { self.m_vec128.array[1] = _y; } }
 
-    /// Set the z value */
+    /// Set the z value
     #[inline(always)]
     pub fn set_z(&mut self, _z: BtScalar) { unsafe { self.m_vec128.array[2] = _z; } }
 
-    /// Set the w value */
+    /// Set the w value
     #[inline(always)]
     pub fn set_w(&mut self, _w: BtScalar) { unsafe { self.m_vec128.array[3] = _w; } }
 
-    /// Return the x value */
+    /// Return the x value
     #[inline(always)]
     pub fn x(&self) -> BtScalar { unsafe { return self.m_vec128.array[0]; } }
 
-    /// Return the y value */
+    /// Return the y value
     #[inline(always)]
     pub fn y(&self) -> BtScalar { unsafe { return self.m_vec128.array[1]; } }
 
-    /// Return the z value */
+    /// Return the z value
     #[inline(always)]
     pub fn z(&self) -> BtScalar { unsafe { return self.m_vec128.array[2]; } }
 
-    /// Return the w value */
+    /// Return the w value
     #[inline(always)]
     pub fn w(&self) -> BtScalar { unsafe { return self.m_vec128.array[3]; } }
 
