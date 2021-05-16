@@ -701,9 +701,22 @@ impl BtVector3 {
     /// - Parameter:  array The other vectors
     /// - Parameter:  array_count The number of other vectors
     /// - Parameter:  dotOut The maximum dot product */
+    /// TODO: It can be accelerated by using SIMD.
     #[inline(always)]
-    pub fn max_dot(&self, array: BtVector3, array_count: i64, dot_out: &mut BtScalar) -> i64 {
-        return 0;
+    pub fn max_dot(&self, array: Vec<BtVector3>, array_count: i64, dot_out: &mut BtScalar) -> i64 {
+        let mut max_dot1 = -SIMD_INFINITY;
+        let mut pt_index = -1;
+        for i in 0..array_count {
+            let dot = array[i as usize].dot(self);
+
+            if dot > max_dot1 {
+                max_dot1 = dot;
+                pt_index = i;
+            }
+        }
+
+        *dot_out = max_dot1;
+        return pt_index;
     }
 
     /// returns index of minimum dot product between this and vectors in array[]
@@ -711,8 +724,22 @@ impl BtVector3 {
     /// - Parameter:  array_count The number of other vectors
     /// - Parameter:  dotOut The minimum dot product */
     #[inline(always)]
-    pub fn min_dot(&self, array: BtVector3, array_count: i64, dot_out: &mut BtScalar) -> i64 {
-        return 0;
+    pub fn min_dot(&self, array: Vec<BtVector3>, array_count: i64, dot_out: &mut BtScalar) -> i64 {
+        let mut min_dot = SIMD_INFINITY;
+        let mut pt_index = -1;
+
+        for i in 0..array_count {
+            let dot = array[i as usize].dot(self);
+
+            if dot < min_dot {
+                min_dot = dot;
+                pt_index = i;
+            }
+        }
+
+        *dot_out = min_dot;
+
+        return pt_index;
     }
 
     //// create a vector as  btVector3( this->dot( btVector3 v0 ), this->dot( btVector3 v1), this->dot( btVector3 v2 ))
