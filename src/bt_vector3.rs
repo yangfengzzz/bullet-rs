@@ -352,6 +352,14 @@ macro_rules! impl_vector_ops {
                 }
             }
         }
+
+        impl Clone for  $Vector {
+            fn clone(&self) -> Self {
+                unsafe {
+                    return $VecNew(self.m_vec128.simd);
+                }
+            }
+        }
     }
 }
 
@@ -455,7 +463,7 @@ impl BtVector3 {
 
     // Return a normalized version of this vector
     #[inline(always)]
-    pub fn normalized(&self) -> &BtVector3 {
+    pub fn normalized(&self) -> BtVector3 {
         let nrm = self.clone();
 
         return nrm.normalized();
@@ -1014,17 +1022,3 @@ pub fn test() {
         assert_eq!(a.m_vec128.array[0], 10.0);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
