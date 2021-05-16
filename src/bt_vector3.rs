@@ -120,9 +120,9 @@ macro_rules! v_1_5 {
 }
 
 //--------------------------------------------------------------------------------------------------
-union SimdToArray {
-    array: [f32; 4],
-    simd: BtSimdFloat4,
+pub union SimdToArray {
+    pub array: [f32; 4],
+    pub simd: BtSimdFloat4,
 }
 
 /// btVector3 can be used to represent 3D points and vectors.
@@ -131,7 +131,7 @@ union SimdToArray {
 /// optimized SIMD version that keeps the data in registers
 ///
 pub struct BtVector3 {
-    m_vec128: SimdToArray,
+    pub m_vec128: SimdToArray,
 }
 
 impl BtVector3 {
@@ -852,7 +852,7 @@ pub fn lerp(v1: &BtVector3, v2: &BtVector3, t: &BtScalar) -> BtVector3 { return 
 
 //--------------------------------------------------------------------------------------------------
 pub struct BtVector4 {
-    m_vec128: SimdToArray,
+    pub m_vec128: SimdToArray,
 }
 
 impl BtVector4 {

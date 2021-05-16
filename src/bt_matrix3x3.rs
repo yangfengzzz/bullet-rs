@@ -11,7 +11,7 @@ use crate::bt_vector3::BtVector3;
 /// The btMatrix3x3 class implements a 3x3 rotation matrix, to perform linear algebra in combination with
 /// btQuaternion, btTransform and btVector3. Make sure to only include a pure orthogonal matrix without scaling. */
 pub struct BtMatrix3x3 {
-    m_el: [BtVector3; 3],
+   pub m_el: [BtVector3; 3],
 }
 
 impl BtMatrix3x3 {
