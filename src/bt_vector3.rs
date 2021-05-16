@@ -716,6 +716,19 @@ impl BtVector3 {
     }
 
     //// create a vector as  btVector3( this->dot( btVector3 v0 ), this->dot( btVector3 v1), this->dot( btVector3 v2 ))
+    /// # Examples
+    ///
+    /// ```
+    /// use bullet_rs::bt_vector3::BtVector3;
+    /// let a = BtVector3::new(1.0, 2.0, 3.0);
+    /// let v0 = BtVector3::new(10.0, 0.0, 0.0);
+    /// let v1 = BtVector3::new(0.0, 10.0, 0.0);
+    /// let v2 = BtVector3::new(0.0, 0.0, 10.0);
+    /// let result = a.dot3(v0, v1, v2);
+    /// assert_eq!(result.x(), 10.0);
+    /// assert_eq!(result.y(), 20.0);
+    /// assert_eq!(result.z(), 30.0);
+    ///
     #[inline(always)]
     #[allow(overflowing_literals)]
     pub fn dot3(&self, v0: BtVector3, v1: BtVector3, v2: BtVector3) -> BtVector3 {
@@ -779,9 +792,6 @@ pub fn test() {
         assert_eq!(a.m_vec128.array[0], 10.0);
     }
 }
-
-
-
 
 
 
