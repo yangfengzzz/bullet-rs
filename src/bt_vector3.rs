@@ -6,12 +6,9 @@
  * // property of any third parties.
  */
 
-use crate::bt_scalar::{*};
-use crate::bt_casti_to128f;
-use crate::bt_castf_to128d;
-use crate::bt_castd_to128f;
+use crate::bt_scalar::*;
 use std::arch::x86_64::{*};
-use std::ops::{AddAssign, SubAssign, MulAssign, DivAssign, Add, Mul, Sub, Neg, Div, Index, IndexMut};
+use std::ops::*;
 use std::fmt::{Debug, Formatter, Result};
 
 #[macro_export]
@@ -66,14 +63,14 @@ macro_rules! btv_fff0_mask {
 #[macro_export]
 macro_rules! btv3_absf_mask {
     () => {
-        bt_casti_to128f!(btv_3absi_mask!())
+        bt_casti_to128f(btv_3absi_mask!())
     };
 }
 
 #[macro_export]
 macro_rules! btv_fff0f_mask {
     () => {
-        bt_casti_to128f!(btv_fff0_mask!())
+        bt_casti_to128f(btv_fff0_mask!())
     };
 }
 
@@ -87,7 +84,7 @@ macro_rules! btv_xyz_maskf {
 #[macro_export]
 macro_rules! btv_absf_mask {
     () => {
-        bt_casti_to128f!(btv_abs_mask!())
+        bt_casti_to128f(btv_abs_mask!())
     };
 }
 
@@ -848,7 +845,7 @@ impl BtVector3 {
             let mut r = _mm_movelh_ps(b0, b2);
             r = _mm_add_ps(r, _mm_movehl_ps(b2, b0));
             a2 = _mm_and_ps(a2, btv_xyz_maskf!());
-            r = _mm_add_ps(r, bt_castd_to128f!(_mm_move_sd( bt_castf_to128d!(a2), bt_castf_to128d!(b1))));
+            r = _mm_add_ps(r, bt_castd_to128f(_mm_move_sd( bt_castf_to128d(a2), bt_castf_to128d(b1))));
             return BtVector3::new_simd(r);
         }
     }
